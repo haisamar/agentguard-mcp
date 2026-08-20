@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "agentguard-mcp"
+version = "0.1.0"
+description = "Identity-aware MCP authorization server with Auth0, least-privilege scopes, contextual policy, human approval, replay protection, and Supabase audit logging."
+authors = ["AgentGuard"]
+readme = "README.md"
+package-mode = false
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+python-dotenv = "^1.1.1"
+
+mcp = "^1.14.1"
+auth0-api-python = "^1.0.0b6"
+
+starlette = "^0.48.0"
+uvicorn = "^0.36.0"
+
+# Persistence for approvals and audit events
+supabase = ">=2.0,<3.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = ">=0.13.1,<0.14.0"
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
