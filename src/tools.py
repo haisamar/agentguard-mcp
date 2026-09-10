@@ -51,7 +51,12 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
         name="search_accounts",
         title="Search CRM Accounts",
         description="Search CRM accounts by company name.",
-        annotations={"readOnlyHint": True},
+        annotations={
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
     )
     @require_scopes(["crm:read"])
     async def search_accounts(query: str, ctx: Context) -> str:
@@ -96,7 +101,12 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
         name="issue_refund",
         title="Issue Customer Refund",
         description="Issue a refund to a customer account.",
-        annotations={"destructiveHint": True},
+        annotations={
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
     )
     @require_scopes(["finance:refund"])
     async def issue_refund(
@@ -221,7 +231,12 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
         name="list_pending_approvals",
         title="List Pending Approvals",
         description="List AgentGuard actions waiting for human approval.",
-        annotations={"readOnlyHint": True},
+        annotations={
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
     )
     @require_scopes(["agent:manage"])
     async def pending_approvals(ctx: Context) -> str:
@@ -253,6 +268,12 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
         name="approve_action",
         title="Approve Pending Action",
         description="Approve an AgentGuard action waiting for human review.",
+        annotations={
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
     )
     @require_scopes(["agent:manage"])
     async def approve_action(
@@ -318,7 +339,12 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
         name="execute_approved_refund",
         title="Execute Approved Refund",
         description="Execute a refund after human approval.",
-        annotations={"destructiveHint": True},
+        annotations={
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
     )
     @require_scopes(["finance:refund"])
     async def execute_approved_refund(
