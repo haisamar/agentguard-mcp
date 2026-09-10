@@ -1,6 +1,6 @@
 # AgentGuard MCP
 
-[![M8ven Score](https://m8ven.ai/badge/mcp/haisamar-agentguard-mcp-mpew3p?v=38f4af456272dc5ccc58308289e97ce3)](https://m8ven.ai/mcp/haisamar-agentguard-mcp-mpew3p)
+[![M8ven Score](https://m8ven.ai/badge/mcp/haisamar-agentguard-mcp-mpew3p?v=554381fee432872261fba83882cf6ff3)](https://m8ven.ai/mcp/haisamar-agentguard-mcp-mpew3p)
 
 ### Identity-Aware Authorization for AI Agents
 
