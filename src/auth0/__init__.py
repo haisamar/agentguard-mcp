@@ -8,10 +8,12 @@ including token verification, middleware, and scoped tool decorators.
 from __future__ import annotations
 
 import logging
+from urllib.parse import urlsplit
 from collections.abc import Callable
 
 from mcp.server.auth.routes import create_protected_resource_routes
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -46,9 +48,15 @@ class Auth0Mcp:
         self.mcp_server_url = mcp_server_url
         if not self.audience or not self.domain:
             raise RuntimeError("audience and domain must be provided")
+        public = urlsplit(mcp_server_url or "http://localhost:3001")
         self.mcp = FastMCP(
             name=self.name,
             stateless_http=True,
+            transport_security=TransportSecuritySettings(
+                enable_dns_rebinding_protection=True,
+                allowed_hosts=[public.netloc],
+                allowed_origins=[f"{public.scheme}://{public.netloc}"],
+            ),
         )
         self._scopes_supported = {
             "openid",
