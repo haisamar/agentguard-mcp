@@ -1167,3 +1167,12 @@ https://agentguard-eight.vercel.app
 ## Interactive Demo
 
 https://agentguard-eight.vercel.app/demo
+
+
+## Safety regression checks
+
+Run `python -m unittest discover -s tests -v` from the backend directory after installing dependencies and configuring the server environment.
+
+The MCP `approve_action` tool now denies approval requests and directs reviewers to the dashboard. Human approval is granted only through dashboard server actions, which enforce the configured administrator email allowlist. Machine tokens with `agent:manage` cannot grant human approval through MCP.
+
+Refund amounts must be positive and finite. Approved execution uses a conditional database update; only the request that successfully claims an APPROVED row can report execution. Refund processing remains a demonstration, with no payment-provider transaction integration.

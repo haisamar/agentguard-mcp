@@ -1,3 +1,6 @@
+import asyncio
+import json
+from types import SimpleNamespace
 import unittest
 from unittest.mock import MagicMock, patch
 from src.policy import evaluate, Decision
@@ -5,6 +8,24 @@ from src import approvals
 
 
 class SafetyTests(unittest.TestCase):
+    def test_mcp_cannot_grant_human_approval(self):
+        from src import tools
+        registered = {}
+        class Registry:
+            def tool(self, **options):
+                def capture(fn):
+                    registered[options["name"]] = fn
+                    return fn
+                return capture
+        harness = SimpleNamespace(mcp=Registry(), register_scopes=lambda scopes: None)
+        tools.register_tools(harness)
+        ctx = SimpleNamespace(request_context=SimpleNamespace(request=SimpleNamespace(
+            state=SimpleNamespace(auth={"extra": {"sub": "machine@clients"}}))))
+        with patch.object(tools, "record_event") as audit:
+            result = asyncio.run(registered["approve_action"].__wrapped__("apr_test", ctx))
+            self.assertEqual(json.loads(result)["decision"], "DENY")
+            self.assertEqual(audit.call_args.kwargs["metadata"]["security_event"], "approval_bypass_attempt")
+
     def test_invalid_amounts_are_denied(self):
         for amount in [None, True, False, 0, -1, "invalid", float("nan"), float("inf"), -float("inf")]:
             with self.subTest(amount=amount):

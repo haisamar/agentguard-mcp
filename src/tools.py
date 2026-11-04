@@ -7,7 +7,6 @@ from .auth0.authz import register_required_scopes, require_scopes
 from .policy import Decision, evaluate
 from .audit import record_event
 from .approvals import (
-    approve_approval,
     create_approval,
     get_approval,
     list_pending_approvals,
@@ -283,53 +282,21 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
         auth_info = ctx.request_context.request.state.auth
         approver = auth_info.get("extra", {}).get("sub")
 
-        approval = approve_approval(
-            approval_id=approval_id,
-            approved_by=approver,
-        )
-
-        if not approval:
-            record_event(
-                identity=approver,
-                action="approve_action",
-                decision="DENY",
-                required_scope="agent:manage",
-                reason="Approval request not found.",
-                metadata={
-                    "requested_approval_id": approval_id,
-                },
-            )
-
-            return json.dumps(
-                {
-                    "decision": "DENY",
-                    "reason": "Approval request not found.",
-                },
-                indent=2,
-            )
-
+        # Human approvals are issued only by the authenticated dashboard,
+        # which enforces the administrator email allowlist. A machine token
+        # with agent:manage must not cross that human authority boundary.
         record_event(
-            identity=approver,
+            identity=approver or "unknown",
             action="approve_action",
-            decision="APPROVED",
+            decision="DENY",
             required_scope="agent:manage",
-            approval_id=approval["id"],
-            reason="Human administrator approved the requested action.",
-            metadata={
-                "requesting_identity": approval["identity"],
-                "original_action": approval["action"],
-            },
+            reason="Human approval must be completed in the administrator dashboard.",
+            metadata={"security_event": "approval_bypass_attempt"},
         )
-
-        return json.dumps(
-            {
-                "decision": "APPROVED",
-                "approval_id": approval["id"],
-                "approved_by": approval["approved_by"],
-                "approval": approval,
-            },
-            indent=2,
-        )
+        return json.dumps({
+            "decision": "DENY",
+            "reason": "Use the authenticated administrator dashboard to review this action.",
+        })
 
     # ---------------------------------------------------------
     # APPROVED EXECUTION
