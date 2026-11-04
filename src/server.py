@@ -6,7 +6,8 @@ from collections.abc import AsyncIterator
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
-from starlette.routing import Mount
+from starlette.routing import Mount, Route
+from starlette.responses import JSONResponse
 
 from .auth0 import Auth0Mcp
 from .config import get_config
@@ -43,9 +44,15 @@ async def lifespan(app: Starlette) -> AsyncIterator[None]:
         yield
 
 
+async def health(request):
+    # Liveness only: this does not assert database or Auth0 availability.
+    return JSONResponse({"status": "ok", "service": "agentguard-mcp"})
+
+
 starlette_app = Starlette(
     debug=config.debug,
     routes=[
+        Route("/health", health, methods=["GET"]),
         # Put the specific OAuth metadata route directly in the parent app.
         *metadata_router.routes,
 
@@ -73,4 +80,4 @@ app = CORSMiddleware(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, port=config.port)
+    uvicorn.run(app, host="0.0.0.0", port=config.port)
