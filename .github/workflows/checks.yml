@@ -1,0 +1,16 @@
+name: Backend checks
+on: [push, pull_request]
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_SECRET_KEY: ci-placeholder-not-a-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install poetry
+      - run: poetry install --no-interaction
+      - run: poetry run python -m unittest discover -s tests -v
