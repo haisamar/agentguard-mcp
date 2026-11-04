@@ -127,6 +127,6 @@ def mark_executed(approval_id: str) -> dict | None:
     )
 
     if not response.data:
-        return get_approval(approval_id)
+        return None
 
     return _normalize(response.data[0])

@@ -468,7 +468,13 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
 
         payload = approval["payload"]
 
-        mark_executed(approval_id)
+        claimed = mark_executed(approval_id)
+        if not claimed:
+            return json.dumps({
+                "decision": "DENY",
+                "reason": "Approval is no longer available for execution.",
+                "approval_id": approval_id,
+            })
 
         record_event(
             identity=identity,
