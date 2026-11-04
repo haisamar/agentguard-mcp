@@ -17,7 +17,8 @@ version = "0.1.0"
 description = "Identity-aware MCP authorization server with Auth0, least-privilege scopes, contextual policy, human approval, replay protection, and Supabase audit logging."
 authors = ["AgentGuard"]
 readme = "README.md"
-package-mode = false
+package-mode = true
+packages = [{ include = "src" }]
 
 
 [tool.poetry.dependencies]
