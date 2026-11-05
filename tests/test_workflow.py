@@ -1,4 +1,5 @@
 """Tool-handler regression tests. Storage is mocked; no live transactions occur."""
+from datetime import datetime, timezone
 import asyncio
 import json
 import unittest
@@ -20,7 +21,7 @@ class WorkflowTests(unittest.TestCase):
         tools.register_tools(SimpleNamespace(mcp=Registry(), register_scopes=lambda scopes: None))
         self.ctx = SimpleNamespace(request_context=SimpleNamespace(request=SimpleNamespace(
             state=SimpleNamespace(auth={"extra": {"sub": "finance-agent"}}))))
-        self.row = {"id": "apr_test", "identity": "finance-agent", "action": "issue_refund",
+        self.row = {"created_at": datetime.now(timezone.utc).isoformat(), "id": "apr_test", "identity": "finance-agent", "action": "issue_refund",
                     "status": "APPROVED", "approved_by": "human:reviewer",
                     "payload": {"account_id": "acct_001", "amount": 750, "reason": "test"}}
 
@@ -38,6 +39,11 @@ class WorkflowTests(unittest.TestCase):
             with self.subTest(change=change), patch.object(tools, "get_approval", return_value={**self.row, **change}), patch.object(tools, "mark_executed") as claim, patch.object(tools, "record_event"):
                 self.assertEqual(self.execute()["decision"], "DENY")
                 claim.assert_not_called()
+
+    def test_expired_approval_never_claims(self):
+        with patch.object(tools, "get_approval", return_value={**self.row, "created_at": "2000-01-01T00:00:00Z"}), patch.object(tools, "mark_executed") as claim, patch.object(tools, "record_event"):
+            self.assertEqual(self.execute()["decision"], "DENY")
+            claim.assert_not_called()
 
     def test_missing_approval_never_claims(self):
         with patch.object(tools, "get_approval", return_value=None), patch.object(tools, "mark_executed") as claim, patch.object(tools, "record_event"):

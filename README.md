@@ -1089,7 +1089,7 @@ Intentional boundaries currently include:
 - policy management is not exposed through a dedicated control plane
 - audit events are not cryptographically immutable
 - distributed locking for production concurrency is outside the prototype scope
-- approval expiration is not implemented
+- approvals expire one hour after request creation; expired requests must be resubmitted
 - backend deployment is designed primarily for controlled testing
 
 These limitations are documented rather than hidden.
@@ -1176,3 +1176,6 @@ Run `python -m unittest discover -s tests -v` from the backend directory after i
 The MCP `approve_action` tool now denies approval requests and directs reviewers to the dashboard. Human approval is granted only through dashboard server actions, which enforce the configured administrator email allowlist. Machine tokens with `agent:manage` cannot grant human approval through MCP.
 
 Refund amounts must be positive and finite. Approved execution uses a conditional database update; only the request that successfully claims an APPROVED row can report execution. Refund processing remains a demonstration, with no payment-provider transaction integration.
+
+
+Approval expiry is enforced at execution and during dashboard approval using a conditional created_at cutoff. Application server UTC time is used; clock synchronization is a deployment assumption. This does not add a database EXPIRED status or transaction receipt ledger.

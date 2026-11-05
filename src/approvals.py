@@ -1,7 +1,25 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 
 from .database import supabase
+
+# Approval validity is measured from request creation, not review time.
+APPROVAL_TTL_SECONDS = 3600
+
+
+def approval_cutoff() -> str:
+    return (datetime.now(timezone.utc) - timedelta(seconds=APPROVAL_TTL_SECONDS)).isoformat()
+
+
+def approval_expired(approval: dict) -> bool:
+    try:
+        created = datetime.fromisoformat(approval["created_at"].replace("Z", "+00:00"))
+        if created.tzinfo is None:
+            return True
+        return created <= datetime.now(timezone.utc) - timedelta(seconds=APPROVAL_TTL_SECONDS)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return True
+
 
 
 def _normalize(row: dict | None) -> dict | None:
@@ -85,8 +103,11 @@ def approve_approval(
     if not approval:
         return None
 
+    if approval_expired(approval):
+        return None
+
     if approval["status"] != "PENDING":
-        return approval
+        return None
 
     approved_at = datetime.now(timezone.utc).isoformat()
 
@@ -101,11 +122,12 @@ def approve_approval(
         )
         .eq("id", approval_id)
         .eq("status", "PENDING")
+        .gt("created_at", approval_cutoff())
         .execute()
     )
 
     if not response.data:
-        return get_approval(approval_id)
+        return None
 
     return _normalize(response.data[0])
 
@@ -123,6 +145,7 @@ def mark_executed(approval_id: str) -> dict | None:
         )
         .eq("id", approval_id)
         .eq("status", "APPROVED")
+        .gt("created_at", approval_cutoff())
         .execute()
     )
 

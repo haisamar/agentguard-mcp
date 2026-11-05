@@ -26,6 +26,11 @@ class SafetyTests(unittest.TestCase):
             self.assertEqual(json.loads(result)["decision"], "DENY")
             self.assertEqual(audit.call_args.kwargs["metadata"]["security_event"], "approval_bypass_attempt")
 
+    def test_invalid_approval_timestamps_fail_closed(self):
+        for created in [None, "invalid", "2026-01-01T00:00:00", "2000-01-01T00:00:00Z"]:
+            with self.subTest(created=created):
+                self.assertTrue(approvals.approval_expired({"created_at": created}))
+
     def test_invalid_amounts_are_denied(self):
         for amount in [None, True, False, 0, -1, "invalid", float("nan"), float("inf"), -float("inf")]:
             with self.subTest(amount=amount):
@@ -41,7 +46,7 @@ class SafetyTests(unittest.TestCase):
 
     def test_lost_execution_claim_is_rejected(self):
         database = MagicMock()
-        database.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value.data = []
+        database.table.return_value.update.return_value.eq.return_value.eq.return_value.gt.return_value.execute.return_value.data = []
         with patch.object(approvals, "supabase", database), patch.object(approvals, "get_approval", side_effect=AssertionError("must not reread a lost claim")):
             self.assertIsNone(approvals.mark_executed("apr_test"))
 

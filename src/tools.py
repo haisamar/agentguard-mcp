@@ -7,6 +7,7 @@ from .auth0.authz import register_required_scopes, require_scopes
 from .policy import Decision, evaluate
 from .audit import record_event
 from .approvals import (
+    approval_expired,
     create_approval,
     get_approval,
     list_pending_approvals,
@@ -432,6 +433,15 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
                 },
                 indent=2,
             )
+
+        if approval_expired(approval):
+            record_event(
+                identity=identity, action="execute_approved_refund", decision="DENY",
+                required_scope="finance:refund", approval_id=approval_id,
+                reason="Approval has expired or has an invalid creation time.",
+                metadata={"security_event": "expired_approval"},
+            )
+            return json.dumps({"decision": "DENY", "reason": "Approval has expired.", "approval_id": approval_id})
 
         payload = approval["payload"]
 
