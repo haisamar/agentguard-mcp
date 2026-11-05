@@ -39,3 +39,8 @@ A proposed SQL migration in database/migrations/001_refund_receipts.sql adds a s
 The receipt migration is now applied to AgentGuard. The backend-only RPC uses a row lock and writes the sandbox receipt, EXECUTED status and success audit event in one PostgreSQL transaction. Browser-role execute grants were checked and are absent.
 
 A direct database API trial with synthetic preapproved fixtures submitted eight concurrent calls: one ALLOW, seven DENY, exactly one receipt for 75100 USD minor units. Wrong-identity, expired and invalid-precision cases were denied and produced no additional receipts. These are database tests, not human-review evidence or external payment tests.
+
+
+## Human-approved receipt workflow (November 4, 2026 client date)
+
+A fresh $754 request (apr_bde245b3a5) was created through the deployed MCP tool and approved by the user through the authenticated dashboard. Database read-back confirmed APPROVED and a human reviewer. The original Finance Agent executed it through the deployed MCP endpoint, which returned simulated_refund_recorded with receipt c031af88-cc26-4cc1-b4a6-b6991fe848a9. Database checks confirmed exactly one receipt for 75400 USD minor units and an ALLOW audit event linked to that receipt. A second execution returned DENY. No real money was transferred. Dashboard visual rendering of this particular receipt has not yet been independently verified.
