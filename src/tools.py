@@ -11,7 +11,7 @@ from .approvals import (
     create_approval,
     get_approval,
     list_pending_approvals,
-    mark_executed,
+    execute_with_receipt,
 )
 
 
@@ -443,42 +443,14 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
             )
             return json.dumps({"decision": "DENY", "reason": "Approval has expired.", "approval_id": approval_id})
 
-        payload = approval["payload"]
-
-        claimed = mark_executed(approval_id)
-        if not claimed:
-            return json.dumps({
-                "decision": "DENY",
-                "reason": "Approval is no longer available for execution.",
-                "approval_id": approval_id,
-            })
-
-        record_event(
-            identity=identity,
-            action="execute_approved_refund",
-            decision="ALLOW",
-            required_scope="finance:refund",
-            reason="Human approval verified.",
-            approval_id=approval_id,
-            metadata={
-                "account_id": payload["account_id"],
-                "amount": payload["amount"],
-                "approved_by": approval["approved_by"],
-            },
-        )
-
-        return json.dumps(
-            {
-                "identity": identity,
-                "approval_id": approval_id,
-                "approved_by": approval["approved_by"],
-                "decision": "ALLOW",
-                "account_id": payload["account_id"],
-                "amount": payload["amount"],
-                "reason": payload["reason"],
-                "status": "refund_processed",
-            },
-            indent=2,
-        )
+        result = execute_with_receipt(approval_id, identity)
+        if result["decision"] == "DENY":
+            record_event(
+                identity=identity, action="execute_approved_refund", decision="DENY",
+                required_scope="finance:refund", approval_id=approval_id,
+                reason=result.get("reason", "Receipt transaction denied execution."),
+                metadata={"security_event": "execution_transaction_denied"},
+            )
+        return json.dumps(result, indent=2)
 
     register_required_scopes(auth0_mcp)

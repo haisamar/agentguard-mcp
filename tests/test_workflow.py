@@ -30,34 +30,34 @@ class WorkflowTests(unittest.TestCase):
 
     def test_denied_states_never_claim_execution(self):
         for status in ["PENDING", "DENIED", "EXECUTED"]:
-            with self.subTest(status=status), patch.object(tools, "get_approval", return_value={**self.row, "status": status}), patch.object(tools, "mark_executed") as claim, patch.object(tools, "record_event"):
+            with self.subTest(status=status), patch.object(tools, "get_approval", return_value={**self.row, "status": status}), patch.object(tools, "execute_with_receipt") as claim, patch.object(tools, "record_event"):
                 self.assertEqual(self.execute()["decision"], "DENY")
                 claim.assert_not_called()
 
     def test_wrong_identity_and_action_never_claim(self):
         for change in [{"identity": "other-agent"}, {"action": "export_customer_data"}]:
-            with self.subTest(change=change), patch.object(tools, "get_approval", return_value={**self.row, **change}), patch.object(tools, "mark_executed") as claim, patch.object(tools, "record_event"):
+            with self.subTest(change=change), patch.object(tools, "get_approval", return_value={**self.row, **change}), patch.object(tools, "execute_with_receipt") as claim, patch.object(tools, "record_event"):
                 self.assertEqual(self.execute()["decision"], "DENY")
                 claim.assert_not_called()
 
     def test_expired_approval_never_claims(self):
-        with patch.object(tools, "get_approval", return_value={**self.row, "created_at": "2000-01-01T00:00:00Z"}), patch.object(tools, "mark_executed") as claim, patch.object(tools, "record_event"):
+        with patch.object(tools, "get_approval", return_value={**self.row, "created_at": "2000-01-01T00:00:00Z"}), patch.object(tools, "execute_with_receipt") as claim, patch.object(tools, "record_event"):
             self.assertEqual(self.execute()["decision"], "DENY")
             claim.assert_not_called()
 
     def test_missing_approval_never_claims(self):
-        with patch.object(tools, "get_approval", return_value=None), patch.object(tools, "mark_executed") as claim, patch.object(tools, "record_event"):
+        with patch.object(tools, "get_approval", return_value=None), patch.object(tools, "execute_with_receipt") as claim, patch.object(tools, "record_event"):
             self.assertEqual(self.execute()["decision"], "DENY")
             claim.assert_not_called()
 
     def test_success_then_lost_claim(self):
-        with patch.object(tools, "get_approval", return_value=self.row), patch.object(tools, "mark_executed", side_effect=[self.row, None]) as claim, patch.object(tools, "record_event"):
+        with patch.object(tools, "get_approval", return_value=self.row), patch.object(tools, "execute_with_receipt", side_effect=[{"decision": "ALLOW", "receipt_id": "test-receipt"}, {"decision": "DENY"}]) as claim, patch.object(tools, "record_event"):
             self.assertEqual(self.execute()["decision"], "ALLOW")
             self.assertEqual(self.execute()["decision"], "DENY")
             self.assertEqual(claim.call_count, 2)
 
     def test_database_failure_does_not_report_success(self):
-        with patch.object(tools, "get_approval", side_effect=RuntimeError("database unavailable")), patch.object(tools, "mark_executed") as claim:
+        with patch.object(tools, "get_approval", side_effect=RuntimeError("database unavailable")), patch.object(tools, "execute_with_receipt") as claim:
             with self.assertRaises(RuntimeError):
                 self.execute()
             claim.assert_not_called()

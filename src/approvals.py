@@ -153,3 +153,12 @@ def mark_executed(approval_id: str) -> dict | None:
         return None
 
     return _normalize(response.data[0])
+
+def execute_with_receipt(approval_id: str, identity: str) -> dict:
+    """Database transaction owns validation, ledger effect, state and audit write."""
+    response = supabase.rpc("execute_refund_with_receipt", {
+        "p_approval_id": approval_id, "p_identity": identity,
+    }).execute()
+    if not isinstance(response.data, dict) or response.data.get("decision") not in ("ALLOW", "DENY"):
+        raise RuntimeError("Invalid receipt transaction response")
+    return response.data
