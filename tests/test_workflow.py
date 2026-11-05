@@ -73,3 +73,15 @@ class WorkflowTests(unittest.TestCase):
             result = json.loads(asyncio.run(self.registered["issue_refund"]("acct_001", -1, "test", self.ctx)))
             self.assertEqual(result["decision"], "DENY")
             create.assert_not_called()
+
+    def test_split_refund_routes_to_review(self):
+        with patch.object(tools, "record_autonomous_refund", return_value={"decision": "APPROVAL_REQUIRED", "reason": "Rolling budget exceeded"}), patch.object(tools, "create_approval", return_value={"id": "apr_budget"}) as create, patch.object(tools, "record_event"):
+            result = json.loads(asyncio.run(self.registered["issue_refund"]("acct_001", 250, "test", self.ctx)))
+            self.assertEqual(result["decision"], "APPROVAL_REQUIRED")
+            create.assert_called_once()
+
+    def test_autonomous_database_failure_fails_closed(self):
+        with patch.object(tools, "record_autonomous_refund", side_effect=RuntimeError("database unavailable")), patch.object(tools, "create_approval") as create:
+            with self.assertRaises(RuntimeError):
+                asyncio.run(self.registered["issue_refund"]("acct_001", 100, "test", self.ctx))
+            create.assert_not_called()

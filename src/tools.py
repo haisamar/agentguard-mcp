@@ -8,6 +8,7 @@ from .policy import Decision, evaluate
 from .audit import record_event
 from .approvals import (
     approval_expired,
+    record_autonomous_refund,
     create_approval,
     get_approval,
     list_pending_approvals,
@@ -127,6 +128,12 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
             },
         )
 
+        if policy["decision"] == Decision.ALLOW:
+            budget = record_autonomous_refund(identity, account_id, amount)
+            if budget["decision"] == "ALLOW":
+                return json.dumps(budget, indent=2)
+            policy = budget
+
         # Sensitive refund -> create approval request
         if policy["decision"] == Decision.APPROVAL_REQUIRED:
             approval = create_approval(
@@ -195,33 +202,6 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
                 },
                 indent=2,
             )
-
-        # Normal refund allowed
-        record_event(
-            identity=identity,
-            action="issue_refund",
-            decision="ALLOW",
-            required_scope="finance:refund",
-            reason="Refund satisfied AgentGuard contextual policy.",
-            metadata={
-                "account_id": account_id,
-                "amount": amount,
-                "reason": reason,
-            },
-        )
-
-        return json.dumps(
-            {
-                "identity": identity,
-                "required_permission": "finance:refund",
-                "decision": "ALLOW",
-                "account_id": account_id,
-                "amount": amount,
-                "reason": reason,
-                "status": "refund_processed",
-            },
-            indent=2,
-        )
 
     # ---------------------------------------------------------
     # APPROVAL MANAGEMENT

@@ -162,3 +162,12 @@ def execute_with_receipt(approval_id: str, identity: str) -> dict:
     if not isinstance(response.data, dict) or response.data.get("decision") not in ("ALLOW", "DENY"):
         raise RuntimeError("Invalid receipt transaction response")
     return response.data
+
+
+def record_autonomous_refund(identity: str, account_id: str, amount: float) -> dict:
+    result = supabase.rpc("record_autonomous_refund", {
+        "p_identity": identity, "p_account_id": account_id, "p_amount": amount,
+    }).execute().data
+    if not isinstance(result, dict) or result.get("decision") not in ("ALLOW", "DENY", "APPROVAL_REQUIRED"):
+        raise RuntimeError("Invalid autonomous refund transaction response")
+    return result

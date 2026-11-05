@@ -1179,3 +1179,8 @@ Refund amounts must be positive and finite. Approved execution uses a conditiona
 
 
 Approval expiry is enforced at execution and during dashboard approval using a conditional created_at cutoff. Application server UTC time is used; clock synchronization is a deployment assumption. This does not add a database EXPIRED status or transaction receipt ledger.
+
+
+## Rolling autonomous refund budget
+
+Autonomous refunds share a deployment-wide USD 500 budget over the preceding 24 hours, across machine identities and account IDs. A database advisory transaction lock serializes the budget check and sandbox receipt/audit write. A request that would exceed the budget creates a pending approval instead. Human-approved refunds use the separate approval-bound receipt transaction and do not consume the autonomous budget. Database failure never falls back to an autonomous success response. Autonomous refunds are simulated and only supported for the three demonstration accounts. Repeated low-risk calls are separate authorized requests and consume budget; there is not yet a caller-supplied idempotency key for low-risk request retries.
