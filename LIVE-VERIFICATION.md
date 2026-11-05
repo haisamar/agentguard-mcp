@@ -44,3 +44,6 @@ A direct database API trial with synthetic preapproved fixtures submitted eight 
 ## Human-approved receipt workflow (November 4, 2026 client date)
 
 A fresh $754 request (apr_bde245b3a5) was created through the deployed MCP tool and approved by the user through the authenticated dashboard. Database read-back confirmed APPROVED and a human reviewer. The original Finance Agent executed it through the deployed MCP endpoint, which returned simulated_refund_recorded with receipt c031af88-cc26-4cc1-b4a6-b6991fe848a9. Database checks confirmed exactly one receipt for 75400 USD minor units and an ALLOW audit event linked to that receipt. A second execution returned DENY. No real money was transferred. Dashboard visual rendering of this particular receipt has not yet been independently verified.
+
+
+Additional checks: an intentional fixture-scoped audit insertion failure was injected inside a transaction and rolled back. Assertions verified no receipt and unchanged APPROVED state. Missing/malformed auth returned 400; invalid and tampered tokens returned 401. No live data or trigger from the rollback test was retained.
