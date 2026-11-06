@@ -1,0 +1,146 @@
+{
+  "scope": "AgentGuard simulated ledger only",
+  "run": "release_d992369a7e10488d",
+  "checks": [
+    {
+      "name": "public_liveness",
+      "passed": true
+    },
+    {
+      "name": "resource_metadata_matches_configured_audience",
+      "passed": true
+    },
+    {
+      "name": "missing_token_denied",
+      "passed": true
+    },
+    {
+      "name": "invalid_token_denied",
+      "passed": true
+    },
+    {
+      "name": "v2_minor_unit_contract",
+      "passed": true
+    },
+    {
+      "name": "sales_crm_read",
+      "passed": true
+    },
+    {
+      "name": "sales_refund_denied",
+      "passed": true
+    },
+    {
+      "name": "autonomous_refund",
+      "passed": true
+    },
+    {
+      "name": "identical_retry_same_result",
+      "passed": true
+    },
+    {
+      "name": "changed_payload_denied",
+      "passed": true
+    },
+    {
+      "name": "high_refund_requires_review",
+      "passed": true
+    },
+    {
+      "name": "machine_cannot_approve",
+      "passed": true
+    },
+    {
+      "name": "pending_execution_denied",
+      "passed": true
+    },
+    {
+      "name": "human_approved_execution",
+      "passed": true
+    },
+    {
+      "name": "approved_execution_replay_denied",
+      "passed": true
+    },
+    {
+      "name": "paused_control_state",
+      "passed": true
+    },
+    {
+      "name": "paused_refund_fails_closed",
+      "passed": true
+    },
+    {
+      "name": "paused_refund_no_partial_request",
+      "passed": true
+    },
+    {
+      "name": "cancelled_execution_denied",
+      "passed": true
+    },
+    {
+      "name": "resumed_control_state",
+      "passed": true
+    },
+    {
+      "name": "resumed_refund_allowed",
+      "passed": true
+    },
+    {
+      "name": "resumed_refund_one_request",
+      "passed": true
+    }
+  ],
+  "approval_id": "apr_c7d535f43fe3410eaa154ce583e5fa4d",
+  "low": {
+    "status": "simulated_refund_recorded",
+    "currency": "USD",
+    "decision": "ALLOW",
+    "simulated": true,
+    "receipt_id": "b94a364f-7781-4b0c-aefb-d4fa39ddce8b",
+    "request_id": "release_d992369a7e10488d_low",
+    "amount_minor": 1,
+    "contract_version": 2
+  },
+  "real_payment": false,
+  "human_review_verified": true,
+  "execution": {
+    "status": "simulated_refund_recorded",
+    "currency": "USD",
+    "decision": "ALLOW",
+    "simulated": true,
+    "receipt_id": "dcd9e936-92e9-479e-9f6e-a68ab38daaa6",
+    "approval_id": "apr_c7d535f43fe3410eaa154ce583e5fa4d",
+    "amount_minor": 75500
+  },
+  "replay_decision": "DENY",
+  "cancellation_approval_id": "apr_4dbd15357c13409d8f26cfcb7d7fef80",
+  "execution_paused": false,
+  "resume_receipt_id": "fa018a4b-6abd-4350-ad9b-e9c67214c703",
+  "date": "2026-11-06",
+  "timezone": "America/Toronto",
+  "release": {
+    "backend_commit": "65c3633fdbf1e3b43df9b17eb5a4946ef03a409b",
+    "frontend_commit": "5c469b4234451fb192c8692113bb0e8ceaf26f74",
+    "migrations": "001-008",
+    "backend_deployment": "dpl_Ckvwqf3oXaVfz4JqnRyoADUhbjo2",
+    "frontend_deployment": "dpl_AKXdPaPSYDmeCmXr3QddQY3BVSs4"
+  },
+  "database_assertions": {
+    "cancellation_audit_count": 1,
+    "cancelled_receipt_count": 0,
+    "human_review_audit_count": 1,
+    "execution_paused": false,
+    "approved_receipt_count": 1
+  },
+  "limitations": [
+    "Synthetic ledger effects only; not actual payment-provider integration.",
+    "Single deployed release trial, not sustained load testing.",
+    "Human approval was performed directly by owner; cancellation and pause/resume were agent-operated through authenticated administrator UI.",
+    "Non-admin and stale/future/malformed authentication negatives were policy tests; not all were independently reproduced in live browsers.",
+    "Signed wrong-issuer, wrong-audience and expired-token negative cases remain incomplete.",
+    "Initial enrollment callback failure cause is unconfirmed; subsequent fresh passkey logins succeeded.",
+    "Provider clock-timing error was observed; bounded read recovery is tested locally and deployed, but provider timing failures cannot be guaranteed absent.",
+    "Website polish, fresh-database rehearsal, broader evaluation and final video remain pending."
+  ]
+}
