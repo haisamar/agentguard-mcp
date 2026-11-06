@@ -1,5 +1,11 @@
 # AgentGuard MCP
 
+> Phase 1 release candidate 0.2: see [REFUND-CONTRACT.md](REFUND-CONTRACT.md)
+> for the request-ID/integer-cent write contract, and [DEPENDENCIES.md](DEPENDENCIES.md)
+> for the locked MCP v2 dependencies. Existing examples below describe earlier
+> releases and are being reconciled before submission. Local changes are not
+> evidence that the public MCP endpoint has been upgraded.
+
 [![M8ven Live Monitored](https://m8ven.ai/badge/mcp/haisamar-agentguard-mcp-mpew3p)](https://m8ven.ai/mcp/haisamar-agentguard-mcp-mpew3p)
 
 ### Identity-Aware Authorization for AI Agents
@@ -828,7 +834,7 @@ Each Machine-to-Machine application should receive only the permissions needed f
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.12+ (deployment and CI use Python 3.12)
 - Auth0 tenant
 - Auth0 Machine-to-Machine applications
 - Auth0 API configured for AgentGuard
@@ -863,12 +869,16 @@ source .venv/bin/activate
 
 ## Install Dependencies
 
-Using Poetry:
+Install the exact, hash-verified deployment dependencies:
 
 ```bash
-pip install poetry
-poetry install
+python -m pip install --require-hashes -r requirements.txt
 ```
+
+Dependency updates use `uv==0.13.7`: edit `[project.dependencies]` in
+`pyproject.toml`, run `uv lock`, then
+`uv export --frozen --no-dev --no-emit-project --output-file requirements.txt`.
+Commit both `uv.lock` and the generated `requirements.txt`; CI checks they agree.
 
 Configure:
 

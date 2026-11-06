@@ -62,26 +62,21 @@ class WorkflowTests(unittest.TestCase):
                 self.execute()
             claim.assert_not_called()
 
-    def test_high_risk_request_creates_pending_approval(self):
-        with patch.object(tools, "create_approval", return_value={"id": "apr_test"}) as create, patch.object(tools, "record_event"):
-            result = json.loads(asyncio.run(self.registered["issue_refund"]("acct_001", 750, "test", self.ctx)))
-            self.assertEqual(result["decision"], "APPROVAL_REQUIRED")
-            create.assert_called_once()
+    def test_submission_passes_minor_units_and_request_id(self):
+        expected = {"decision": "APPROVAL_REQUIRED", "approval_id": "apr_test"}
+        with patch.object(tools, "submit_refund_request", return_value=expected) as submit:
+            result = json.loads(asyncio.run(self.registered["issue_refund"]("req_test", "acct_001", 75000, "USD", "test", self.ctx)))
+            self.assertEqual(result, expected)
+            submit.assert_called_once_with("finance-agent", "req_test", "acct_001", 75000, "USD", "test")
 
-    def test_invalid_amount_does_not_create_approval(self):
-        with patch.object(tools, "create_approval") as create, patch.object(tools, "record_event"):
-            result = json.loads(asyncio.run(self.registered["issue_refund"]("acct_001", -1, "test", self.ctx)))
-            self.assertEqual(result["decision"], "DENY")
-            create.assert_not_called()
+    def test_invalid_submission_never_reaches_database(self):
+        for amount in [-1, 0, True, 1.5]:
+            with self.subTest(amount=amount), patch.object(tools, "submit_refund_request") as submit:
+                result = json.loads(asyncio.run(self.registered["issue_refund"]("req_test", "acct_001", amount, "USD", "test", self.ctx)))
+                self.assertEqual(result["decision"], "DENY")
+                submit.assert_not_called()
 
-    def test_split_refund_routes_to_review(self):
-        with patch.object(tools, "record_autonomous_refund", return_value={"decision": "APPROVAL_REQUIRED", "reason": "Rolling budget exceeded"}), patch.object(tools, "create_approval", return_value={"id": "apr_budget"}) as create, patch.object(tools, "record_event"):
-            result = json.loads(asyncio.run(self.registered["issue_refund"]("acct_001", 250, "test", self.ctx)))
-            self.assertEqual(result["decision"], "APPROVAL_REQUIRED")
-            create.assert_called_once()
-
-    def test_autonomous_database_failure_fails_closed(self):
-        with patch.object(tools, "record_autonomous_refund", side_effect=RuntimeError("database unavailable")), patch.object(tools, "create_approval") as create:
+    def test_submission_database_failure_fails_closed(self):
+        with patch.object(tools, "submit_refund_request", side_effect=RuntimeError("database unavailable")):
             with self.assertRaises(RuntimeError):
-                asyncio.run(self.registered["issue_refund"]("acct_001", 100, "test", self.ctx))
-            create.assert_not_called()
+                asyncio.run(self.registered["issue_refund"]("req_test", "acct_001", 100, "USD", "test", self.ctx))

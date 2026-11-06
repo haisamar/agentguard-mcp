@@ -31,7 +31,10 @@ register_tools(auth0_mcp)
 
 
 # Create MCP application once.
-mcp_app = auth0_mcp.mcp.streamable_http_app()
+mcp_app = auth0_mcp.mcp.streamable_http_app(
+    stateless_http=True,
+    transport_security=auth0_mcp.transport_security,
+)
 
 # Auth0's metadata router contains the specific
 # /.well-known/oauth-protected-resource/mcp route.

@@ -4,7 +4,7 @@ import logging
 from collections.abc import Iterable
 from functools import wraps
 
-from mcp.server.fastmcp import Context
+from mcp.server.mcpserver import Context
 
 from . import Auth0Mcp
 from .errors import AuthenticationRequired, InsufficientScope

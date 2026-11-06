@@ -1,0 +1,42 @@
+begin;
+do $$
+declare who text:='test-control-not-human:'||gen_random_uuid(); rid text; r jsonb;
+blocked boolean; n integer;
+begin
+ r:=public.submit_refund_request(who,'approved_pause','acct_001',75100,'USD','Synthetic controls test');
+ rid:=r->>'approval_id';
+ r:=public.review_approval(rid,'human:test-fixture:not-human','APPROVED');
+ assert r->>'ok'='true';
+ r:=public.set_execution_pause(true,'human:test-fixture:not-human');
+ assert r->>'ok'='true';
+ blocked:=false;
+ begin perform public.execute_refund_with_receipt(rid,who);
+ exception when check_violation then blocked:=true; end;
+ assert blocked,'Approved execution bypassed pause';
+ blocked:=false;
+ begin perform public.record_autonomous_refund(who,'acct_001',0.01);
+ exception when check_violation then blocked:=true; end;
+ assert blocked,'Legacy autonomous execution bypassed pause';
+ blocked:=false;
+ begin perform public.submit_refund_request(who,'small_pause','acct_001',1,'USD','Synthetic controls test');
+ exception when check_violation then blocked:=true; end;
+ assert blocked,'v2 execution bypassed pause';
+ select count(*) into n from public.refund_requests where identity=who and request_id='small_pause';
+ assert n=0,'Paused submission left partial request';
+ r:=public.cancel_approval(rid,'human:test-fixture:not-human');
+ assert r->>'ok'='true';
+ r:=public.set_execution_pause(false,'human:test-fixture:not-human');
+ assert r->>'ok'='true';
+ r:=public.execute_refund_with_receipt(rid,who);
+ assert r->>'decision'='DENY','Cancelled approval executed after resume';
+ r:=public.cancel_approval(rid,'human:test-fixture:not-human');
+ assert r->>'ok'='false','Duplicate cancellation accepted';
+ r:=public.submit_refund_request(who,'resumed','acct_001',1,'USD','Synthetic controls test');
+ assert r->>'decision'='ALLOW','Execution failed to resume';
+ select count(*) into n from public.refund_receipts where identity=who;
+ assert n=0;
+ assert not has_function_privilege('anon','public.set_execution_pause(boolean,text)','execute');
+ assert not has_function_privilege('authenticated','public.cancel_approval(text,text)','execute');
+end $$;
+rollback;
+

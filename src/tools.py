@@ -1,15 +1,15 @@
 import json
+import re
 
-from mcp.server.fastmcp import Context
+from mcp.server.mcpserver import Context
+from pydantic import StrictInt
 
 from .auth0 import Auth0Mcp
 from .auth0.authz import register_required_scopes, require_scopes
-from .policy import Decision, evaluate
 from .audit import record_event
 from .approvals import (
     approval_expired,
-    record_autonomous_refund,
-    create_approval,
+    submit_refund_request,
     get_approval,
     list_pending_approvals,
     execute_with_receipt,
@@ -53,10 +53,10 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
         title="Search CRM Accounts",
         description="Search CRM accounts by company name.",
         annotations={
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
+            "read_only_hint": True,
+            "destructive_hint": False,
+            "idempotent_hint": True,
+            "open_world_hint": False,
         },
     )
     @require_scopes(["crm:read"])
@@ -101,107 +101,33 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
     @mcp.tool(
         name="issue_refund",
         title="Issue Customer Refund",
-        description="Issue a refund to a customer account.",
+        description="Submit a simulated USD refund. Use integer cents and a stable request_id; retries return the original submission result. Legacy amount calls must migrate to contract v2.",
         annotations={
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": False,
-            "openWorldHint": False,
+            "read_only_hint": False,
+            "destructive_hint": True,
+            "idempotent_hint": False,
+            "open_world_hint": False,
         },
     )
     @require_scopes(["finance:refund"])
     async def issue_refund(
+        request_id: str,
         account_id: str,
-        amount: float,
+        amount_minor: StrictInt,
+        currency: str,
         reason: str,
         ctx: Context,
     ) -> str:
-        auth_info = ctx.request_context.request.state.auth
-        identity = auth_info.get("extra", {}).get("sub")
-
-        policy = evaluate(
-            action="issue_refund",
-            context={
-                "account_id": account_id,
-                "amount": amount,
-                "reason": reason,
-            },
-        )
-
-        if policy["decision"] == Decision.ALLOW:
-            budget = record_autonomous_refund(identity, account_id, amount)
-            if budget["decision"] == "ALLOW":
-                return json.dumps(budget, indent=2)
-            policy = budget
-
-        # Sensitive refund -> create approval request
-        if policy["decision"] == Decision.APPROVAL_REQUIRED:
-            approval = create_approval(
-                identity=identity,
-                action="issue_refund",
-                payload={
-                    "account_id": account_id,
-                    "amount": amount,
-                    "reason": reason,
-                },
-                reason=policy["reason"],
-            )
-
-            record_event(
-                identity=identity,
-                action="issue_refund",
-                decision="APPROVAL_REQUIRED",
-                required_scope="finance:refund",
-                reason=policy["reason"],
-                approval_id=approval["id"],
-                metadata={
-                    "account_id": account_id,
-                    "amount": amount,
-                    "reason": reason,
-                },
-            )
-
-            return json.dumps(
-                {
-                    "identity": identity,
-                    "required_permission": "finance:refund",
-                    "decision": "APPROVAL_REQUIRED",
-                    "reason": policy["reason"],
-                    "approval_id": approval["id"],
-                    "account_id": account_id,
-                    "amount": amount,
-                    "status": "pending_human_approval",
-                },
-                indent=2,
-            )
-
-        # Contextual policy explicitly denied the action
-        if policy["decision"] == Decision.DENY:
-            record_event(
-                identity=identity,
-                action="issue_refund",
-                decision="DENY",
-                required_scope="finance:refund",
-                reason=policy["reason"],
-                metadata={
-                    "account_id": account_id,
-                    "amount": amount,
-                    "reason": reason,
-                },
-            )
-
-            return json.dumps(
-                {
-                    "identity": identity,
-                    "required_permission": "finance:refund",
-                    "decision": "DENY",
-                    "reason": policy["reason"],
-                    "account_id": account_id,
-                    "amount": amount,
-                    "status": "blocked",
-                },
-                indent=2,
-            )
+        identity = ctx.request_context.request.state.auth.get("extra", {}).get("sub")
+        if (not identity or type(amount_minor) is not int or amount_minor <= 0
+                or amount_minor > 99999999999900 or currency != "USD"
+                or account_id not in {a["id"] for a in ACCOUNTS}
+                or not isinstance(request_id, str)
+                or not re.fullmatch(r"[a-zA-Z0-9_-]{1,128}", request_id)
+                or not isinstance(reason, str) or not reason.strip() or len(reason) > 2000):
+            return json.dumps({"decision": "DENY", "reason": "Invalid v2 refund request."})
+        result = submit_refund_request(identity, request_id, account_id, amount_minor, currency, reason)
+        return json.dumps(result, indent=2)
 
     # ---------------------------------------------------------
     # APPROVAL MANAGEMENT
@@ -212,10 +138,10 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
         title="List Pending Approvals",
         description="List AgentGuard actions waiting for human approval.",
         annotations={
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
+            "read_only_hint": True,
+            "destructive_hint": False,
+            "idempotent_hint": True,
+            "open_world_hint": False,
         },
     )
     @require_scopes(["agent:manage"])
@@ -249,10 +175,10 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
         title="Approve Pending Action",
         description="Approve an AgentGuard action waiting for human review.",
         annotations={
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": False,
-            "openWorldHint": False,
+            "read_only_hint": False,
+            "destructive_hint": True,
+            "idempotent_hint": False,
+            "open_world_hint": False,
         },
     )
     @require_scopes(["agent:manage"])
@@ -288,10 +214,10 @@ def register_tools(auth0_mcp: Auth0Mcp) -> None:
         title="Execute Approved Refund",
         description="Execute a refund after human approval.",
         annotations={
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": False,
-            "openWorldHint": False,
+            "read_only_hint": False,
+            "destructive_hint": True,
+            "idempotent_hint": False,
+            "open_world_hint": False,
         },
     )
     @require_scopes(["finance:refund"])

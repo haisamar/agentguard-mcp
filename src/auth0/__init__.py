@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 from collections.abc import Callable
 
 from mcp.server.auth.routes import create_protected_resource_routes
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class Auth0Mcp:
     """
-    Auth0 integration for FastMCP servers.
+    Auth0 integration for MCPServer servers.
 
     Provides authentication middleware, authorization decorators,
     and OAuth2 Protected Resource metadata endpoints for MCP servers.
@@ -49,14 +49,11 @@ class Auth0Mcp:
         if not self.audience or not self.domain:
             raise RuntimeError("audience and domain must be provided")
         public = urlsplit(mcp_server_url or "http://localhost:3001")
-        self.mcp = FastMCP(
-            name=self.name,
-            stateless_http=True,
-            transport_security=TransportSecuritySettings(
-                enable_dns_rebinding_protection=True,
-                allowed_hosts=[public.netloc],
-                allowed_origins=[f"{public.scheme}://{public.netloc}"],
-            ),
+        self.mcp = MCPServer(name=self.name)
+        self.transport_security = TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=[public.netloc],
+            allowed_origins=[f"{public.scheme}://{public.netloc}"],
         )
         self._scopes_supported = {
             "openid",

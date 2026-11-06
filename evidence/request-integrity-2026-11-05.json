@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-05",
+  "timezone": "America/Toronto",
+  "evidence_class": "live_database_rpc_and_transaction_assertions",
+  "scope": "AgentGuard Supabase; synthetic USD ledger only",
+  "production_mcp_v2_deployed": false,
+  "cases": [
+    {
+      "name": "concurrent_identical_autonomous_requests",
+      "calls": 8,
+      "amount_minor": 1,
+      "observed_receipts": 1,
+      "identical_submission_results": true,
+      "passed": true
+    },
+    {
+      "name": "concurrent_identical_review_requests",
+      "calls": 8,
+      "amount_minor": 75100,
+      "observed_pending_approvals": 1,
+      "identical_submission_results": true,
+      "passed": true
+    },
+    {
+      "name": "autonomous_request_audit_failure",
+      "observed_receipts": 0,
+      "observed_request_records": 0,
+      "observed_audit_records": 0,
+      "passed": true
+    },
+    {
+      "name": "pending_request_audit_failure",
+      "observed_pending_approvals": 0,
+      "observed_request_records": 0,
+      "observed_audit_records": 0,
+      "passed": true
+    }
+  ],
+  "cleanup_verified": true,
+  "real_payments": false,
+  "limitations": [
+    "One eight-call trial per concurrency case; not a sustained load test.",
+    "RPC concurrency uses trusted service credentials, not Auth0 machine tokens.",
+    "No genuine human review occurs in these test cases.",
+    "Results do not establish deployment of local MCP or frontend changes.",
+    "Results are dated database observations; a tagged release manifest is still required."
+  ],
+  "reproduction": [
+    "python tests/verify_request_concurrency.py --live",
+    "database/tests/refund_request_audit_rollback.sql"
+  ]
+}

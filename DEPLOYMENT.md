@@ -1,6 +1,9 @@
 # AgentGuard MCP hosting
 
-The frontend is hosted separately on Vercel. This repository is a long-running ASGI MCP service.
+The frontend and this Python ASGI MCP service are separate Vercel projects.
+The backend entrypoint is `app.py`, configured by `[tool.vercel]` in
+`pyproject.toml`. Runtime dependencies come from the committed, hash-pinned
+`requirements.txt` exported from `uv.lock`. See DEPENDENCIES.md for update commands.
 
 ## Container
 
@@ -16,4 +19,8 @@ GET /health is a public process-liveness endpoint and does not assert database o
 
 Before exposing the service, verify the MCP SDK host/origin protections allow the final hostname without disabling them globally. Record the deployed commit and rollback target. A successful health check alone is not a completed release check.
 
-No hosting provider or paid plan has been selected yet. The Docker image must be built and smoke-tested on a Docker-capable environment before deployment.
+Current public MCP endpoint: https://agentguard-mcp-wine.vercel.app/mcp.
+Vercel hosting has been configured; this document does not assert availability
+or that local dependency changes have been deployed. The Docker image is an
+alternative deployment artifact and still requires a Docker-capable build and
+smoke test before use.

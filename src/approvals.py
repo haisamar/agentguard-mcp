@@ -171,3 +171,15 @@ def record_autonomous_refund(identity: str, account_id: str, amount: float) -> d
     if not isinstance(result, dict) or result.get("decision") not in ("ALLOW", "DENY", "APPROVAL_REQUIRED"):
         raise RuntimeError("Invalid autonomous refund transaction response")
     return result
+
+
+def submit_refund_request(identity: str, request_id: str, account_id: str,
+                          amount_minor: int, currency: str, reason: str) -> dict:
+    result = supabase.rpc("submit_refund_request", {
+        "p_identity": identity, "p_request_id": request_id,
+        "p_account_id": account_id, "p_amount_minor": amount_minor,
+        "p_currency": currency, "p_reason": reason,
+    }).execute().data
+    if not isinstance(result, dict) or result.get("decision") not in ("ALLOW", "DENY", "APPROVAL_REQUIRED"):
+        raise RuntimeError("Invalid refund submission response")
+    return result
