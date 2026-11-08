@@ -1,5 +1,7 @@
 # AgentGuard MCP
 
+[![M8ven Live Monitored](https://m8ven.ai/badge/mcp/haisamar-agentguard-mcp-mpew3p)](https://m8ven.ai/mcp/haisamar-agentguard-mcp-mpew3p)
+
 AgentGuard gives an AI support agent limited authority to request refunds. The
 Python MCP server verifies Auth0 identity and scopes. PostgreSQL checks a shared
 rolling budget, holds sensitive requests for an independent human decision, and
