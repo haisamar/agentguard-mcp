@@ -1,4 +1,5 @@
 import logging
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -31,18 +32,27 @@ class Auth0Middleware(BaseHTTPMiddleware):
     def _build_auth_data(self, token: dict[str, Any]) -> dict[str, Any]:
         """Extract authentication data from verified token."""
         client_id = token.get('client_id') or token.get('azp')
-        if not client_id:
-            raise VerifyAccessTokenError("Token missing 'client_id' or 'azp' claim")
+        subject = token.get('sub')
+        if not isinstance(client_id, str) or not client_id.strip() or not isinstance(subject, str) or not subject.strip():
+            raise VerifyAccessTokenError("Token has invalid identity claims")
 
-        scopes = token.get("scope", "").split() if token.get("scope") else []
+        now = int(time.time())
+        expiry, issued, not_before = token.get("exp"), token.get("iat"), token.get("nbf")
+        if (type(expiry) is not int or expiry <= now or type(issued) is not int
+                or issued > now + 30 or issued >= expiry
+                or ("nbf" in token and (type(not_before) is not int or not_before > now))):
+            raise VerifyAccessTokenError("Token has invalid time claims")
+        scope = token.get("scope", "")
+        if not isinstance(scope, str):
+            raise VerifyAccessTokenError("Token has invalid scope claim")
+        scopes = scope.split()
 
         auth_data = {
             "client_id": client_id,
             "scopes": scopes,
         }
 
-        if expires_at := token.get('exp'):
-            auth_data["expires_at"] = expires_at
+        auth_data["expires_at"] = expiry
 
         # Extract extra claims with dict comprehension
         extra_fields = {'sub', 'azp', 'name', 'email', 'client_id'}
@@ -64,11 +74,14 @@ class Auth0Middleware(BaseHTTPMiddleware):
 
         # Extract and verify token
         token = auth_header[7:].strip() # Remove "Bearer " prefix
+        if not token:
+            raise MalformedAuthorizationRequest("Missing bearer token")
         try:
-            decoded_and_verified_token = await self.client.verify_access_token(
-                token,
-                required_claims=["sub"]
-            )
+            try:
+                decoded_and_verified_token = await self.client.verify_access_token(token, required_claims=["sub"])
+            except (TypeError, ValueError) as error:
+                # The SDK may raise while comparing a malformed signed exp.
+                raise VerifyAccessTokenError("Invalid token claim format") from error
 
             # Set up authentication context
             request.state.auth = self._build_auth_data(decoded_and_verified_token)

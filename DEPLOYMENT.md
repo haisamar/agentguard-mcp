@@ -19,6 +19,8 @@ GET /health is a public process-liveness endpoint and does not assert database o
 
 Before exposing the service, verify the MCP SDK host/origin protections allow the final hostname without disabling them globally. Record the deployed commit and rollback target. A successful health check alone is not a completed release check.
 
+See [HOSTED-REHEARSAL.md](HOSTED-REHEARSAL.md) for an isolated setup and smoke-test procedure. For a credential-free empty-database rehearsal, use [the local evaluator](evaluation/README.md).
+
 Current public MCP endpoint: https://agentguard-mcp-wine.vercel.app/mcp.
 Vercel hosting has been configured; this document does not assert availability
 or that local dependency changes have been deployed. The Docker image is an
