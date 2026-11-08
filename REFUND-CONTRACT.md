@@ -1,6 +1,6 @@
 # Refund request contract v2
 
-Local implementation uses `issue_refund(request_id, account_id, amount_minor,
+The deployed MCP tool uses `issue_refund(request_id, account_id, amount_minor,
 currency, reason)`. Identity comes from the verified token, never tool arguments.
 
 Example arguments:
@@ -34,6 +34,5 @@ approval payloads remain readable. v2 approvals include a derived `amount` field
 for the existing dashboard/execution reader, calculated exactly by PostgreSQL
 from integer cents; callers cannot supply that derived value.
 
-Migration 006 is installed in AgentGuard's database. MCP handler changes are
-local until deployment; this document is not a claim that production uses v2.
-All effects are simulated ledger entries, not external payment execution.
+The v2 handler and migrations 001–008 were exercised in the [November 6 hosted
+release](RELEASE-VERIFICATION-2026-11-06.md). All effects are simulated ledger entries.

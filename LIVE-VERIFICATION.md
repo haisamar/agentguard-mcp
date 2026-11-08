@@ -1,5 +1,8 @@
 # AgentGuard live verification
 
+This is a historical November 3–4 record. Use the [evidence index](SUBMISSION-EVIDENCE.md)
+for the later passkey release, pinned runtime revisions, and local evaluator.
+
 Verified November 3, 2026 (America/Toronto).
 
 Frontend: https://agentguard-eight.vercel.app
@@ -31,7 +34,8 @@ Raw local evidence is retained separately and contains identity identifiers; it 
 
 Using synthetic preapproved database fixtures explicitly labeled as test-harness data (not human decisions), the deployed backend denied execution for a mismatched requester and a request older than two hours. Eight concurrent execution requests against one fresh fixture returned one ALLOW and seven DENY results. This is a single eight-request trial of simulated execution, not proof of exactly-once external payment effects or a broad load test.
 
-A proposed SQL migration in database/migrations/001_refund_receipts.sql adds a sandbox receipt ledger and atomic execution RPC. It is not yet applied, database-tested, or connected to the running application. Do not present receipts as a live feature until migration and integration verification complete.
+At this checkpoint, migration `001_refund_receipts.sql` was proposed. The next
+checkpoint records its application and the receipt transaction test.
 
 
 ## Receipt transaction database verification

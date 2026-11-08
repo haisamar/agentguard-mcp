@@ -21,8 +21,7 @@ Before exposing the service, verify the MCP SDK host/origin protections allow th
 
 See [HOSTED-REHEARSAL.md](HOSTED-REHEARSAL.md) for an isolated setup and smoke-test procedure. For a credential-free empty-database rehearsal, use [the local evaluator](evaluation/README.md).
 
-Current public MCP endpoint: https://agentguard-mcp-wine.vercel.app/mcp.
-Vercel hosting has been configured; this document does not assert availability
-or that local dependency changes have been deployed. The Docker image is an
-alternative deployment artifact and still requires a Docker-capable build and
-smoke test before use.
+The [public MCP endpoint](https://agentguard-mcp-wine.vercel.app/mcp) runs on
+Vercel. See the [evidence index](SUBMISSION-EVIDENCE.md) for pinned builds and
+the dated hosted test. The Docker image is an alternative deployment artifact.
+A container build and smoke test remain open.

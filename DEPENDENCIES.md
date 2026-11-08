@@ -34,8 +34,9 @@ not proof of absence of vulnerabilities or verification of deployed versions.
 - Tool annotations use the v2 snake_case fields.
 - Handler tests and actual ASGI tests cover authenticated tool dispatch,
   machine approval rejection, public metadata, unauthenticated rejection,
-  and host/origin enforcement. Token verification and audit writes are mocked
-  in transport tests; these are not live Auth0/database tests.
+  and host/origin enforcement. Some transport cases use mocked claims. The
+  signed-token cases use the SDK verifier with real RSA signatures and local
+  discovery/JWKS fixtures. Database writes are mocked in those transport tests.
 
 The Auth0 SDK emits an Authlib JOSE deprecation warning. Its dependency allows
 Authlib 1.x, which remains supported by that SDK; no custom cryptography is added.
@@ -50,4 +51,5 @@ python -m unittest discover -s tests -v
 ```
 
 CI additionally checks that exporting the lock does not change committed
-requirements. Full end-to-end production verification remains a release gate.
+requirements. See the [evidence index](SUBMISSION-EVIDENCE.md) for separate
+hosted and local verification.

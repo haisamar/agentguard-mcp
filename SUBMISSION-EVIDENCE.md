@@ -1,39 +1,41 @@
-# AgentGuard submission evidence and release gates
+# AgentGuard submission evidence
 
-## Demonstrated
+Start with the [public walkthrough](https://agentguard-eight.vercel.app/demo)
+and the [evidence page](https://agentguard-eight.vercel.app/evidence). Both open
+without an account. The public walkthrough uses a guided simulation.
 
-- Actual deployed Auth0 machine identity and scope checks.
-- Human review in the authenticated dashboard.
-- Expiring approval bound to the requesting identity.
-- One sandbox receipt, execution state and success audit event written atomically.
-- Live sequential replay denied; one eight-request concurrency trial produced one receipt.
-- Wrong identity, expiry and invalid precision denied.
-- Intentional audit insert failure rolled back the receipt and execution update in PostgreSQL. The test trigger and fixtures were rolled back.
-- Missing/malformed authentication returned 400; invalid and signature-tampered tokens returned 401. A tampered-token test does not independently prove rejection of a correctly signed wrong-audience token.
+| Evidence | Result and scope |
+| --- | --- |
+| [November 6 hosted report](RELEASE-VERIFICATION-2026-11-06.md) | 22 checks on named deployments. A human reviewed a $755 simulated refund after passkey sign-in. The original agent created one receipt. Replay was denied. Cancellation and pause/resume were also observed. |
+| [November 5 database concurrency report](evidence/request-integrity-2026-11-05.json) | Eight identical concurrent submissions produced one receipt in one case and one pending approval in another. This was one trial per case through the database API. |
+| [Local evaluator](evaluation/README.md) | Empty PostgreSQL setup and seven SQL assertion files. On ten fixed cases, AgentGuard matched expected receipt effects 10 times, the scope-and-threshold baseline 3 times, and the unguarded baseline once. This runner uses one connection and synthetic identities. |
+| [Administrator verification](https://github.com/haisamar/agentguard/blob/main/ADMIN-SECURITY.md) | The local production frontend denied signed-out, wrong-subject, and unverified dashboard requests. All ten direct approval and resume attempts under disallowed session conditions stopped before a write. This used encrypted Auth0 SDK fixture sessions. |
 
-## Limitations that must remain visible
+## Pinned runtime source
 
-Refunds are simulated USD ledger entries. No payment-provider integration exists. A compromised backend service credential or privileged database administrator is outside the protection boundary. Audit history is persisted, not cryptographically immutable. The $500 autonomous threshold is per request: splitting refunds to remain below the threshold is not covered by a cumulative spending limit. Below-threshold simulated refunds do not yet use the approved-action receipt transaction. Public demo animations are scripted. Fourteen handler/policy tests use mocked storage; do not report them as live security trials.
+- [Frontend `cd7c263`](https://github.com/haisamar/agentguard/commit/cd7c263092faff19a4166fcfcff7718bee1c0233)
+- [MCP backend `807aee6`](https://github.com/haisamar/agentguard-mcp/commit/807aee629b81b9d8ebb3ce09c300fbec043a1106)
 
-## Video script (2–3 minutes; recording outstanding)
+The hosted approval report identifies the earlier builds used in that run.
+Later runtime checks include signed-out public access, local dashboard access
+tests against the pinned frontend, and a read-only live machine-token smoke test.
 
-1. Explain the concrete risk: an agent issuing a high-impact refund without independent authority.
-2. Show the trust boundary: Auth0 identity -> scope -> policy -> separate human review -> transaction ledger.
-3. Show Sales Agent denied and Finance Agent high-risk request held.
-4. Show an actual human dashboard approval and the receipt from the original agent.
-5. Show replay denial, the eight-request trial result, and the linked audit record.
-6. State the simulated-payment scope, per-request threshold limitation and reproducibility links.
+## Limits and open checks
 
-Use synthetic identities and redact secrets/personal identifiers. Do not stage prerecorded animations as live enforcement. Record against a named frontend/backend release SHA.
+- All refunds are simulated USD ledger entries. The trusted backend credentials
+  and privileged database administrators sit inside the trust boundary.
+- The local evaluation compares fixed ledger cases. It does not measure model
+  behavior. The separate concurrency trial is limited to the documented cases.
+- The full negative live Auth0 browser matrix and an empty hosted installation
+  remain open. See the [rehearsal guide](HOSTED-REHEARSAL.md).
 
-## Remaining release gates
+The [recording script](VIDEO-SCRIPT.md) uses the public walkthrough and the
+dated evidence. See the [November 3–4 checkpoints](LIVE-VERIFICATION.md) for
+earlier results.
 
-- Visual browser verification of receipt layout, mobile/keyboard behavior and verified-admin sign-in.
-- Independently signed expired/wrong-issuer/wrong-audience tokens and non-admin user session tests.
-- Fresh-clone setup using only the published instructions and schema migrations.
-- Review Supabase availability/plan and recovery arrangements through judging; no availability guarantee has been established.
-- A real video artifact and working reviewer links.
-- A sandbox baseline comparison and machine-readable evaluation runner/results.
-- Review how cumulative spending limits and payload immutability should be enforced before claiming protection against refund splitting or privileged payload edits.
+## Historical fresh-checkout check (November 5, 2026)
 
-Do not mark these gates complete based on this document.
+Both repositories were cloned from GitHub without copying local environment files. The frontend npm ci and lint completed successfully. The backend installed published requirements in a new Python 3.14 virtual environment and passed all 14 tests using dummy database configuration. This does not constitute a production Python 3.12 fresh-install verification or a complete judge setup rehearsal. Frontend dependency audit surfaced advisories and initiated a patched-framework release; final audit/build results must be recorded after verification.
+
+The later evidence includes a clean Python 3.12 installation and empty local
+database run. See [dependency verification](DEPENDENCIES.md) for the dated scan.
