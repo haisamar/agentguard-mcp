@@ -55,6 +55,13 @@ and illustrative baselines. It requires no hosted credentials.
 The [evidence index](SUBMISSION-EVIDENCE.md) links the hosted passkey and receipt
 run, a separate concurrency trial, and the exact release references.
 
+The [November 9 hosted rehearsal](HOSTED-VERIFICATION-2026-11-09.md) installed
+the schema into empty hosted PostgreSQL, passed seven SQL test files, and
+connected separate Auth0 credentials and protected Vercel previews. A real
+operator approved one simulated $758 request by passkey. The original agent
+recorded one receipt, and replay was denied. The report identifies its builds
+and the scope of the access and recovery checks.
+
 ## MCP tools
 
 | Tool | Scope | Behavior |
@@ -99,10 +106,18 @@ Run `python -m unittest discover -s tests -v` with the test configuration in
 [CI](.github/workflows/checks.yml). See [hosting](DEPLOYMENT.md) and [dependency
 verification](DEPENDENCIES.md) for deployment and lockfile details.
 
-## Trust boundary
+## Limitations and trust boundary
 
 The ledger records simulated money. AgentGuard trusts Auth0, the backend service
 credentials, and privileged database operators. The audit trail is persisted in
 PostgreSQL. It is not a tamper-proof log against a privileged database operator.
 The public walkthrough uses fixtures, and the reports distinguish hosted
 observations from local comparisons and isolated authorization tests.
+
+The ten-case evaluator uses one database connection and illustrative baselines.
+It does not measure model behavior or production concurrency. Concurrency
+evidence comes from the separate documented eight-request trials. The hosted
+access test used the same verified account before and after pinning it as
+administrator. A distinct verified non-admin account was not tested against
+production. Free hosting may pause or reach usage limits. A public process
+health check alone cannot establish database or Auth0 readiness.

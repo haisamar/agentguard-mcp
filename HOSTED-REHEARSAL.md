@@ -3,7 +3,8 @@
 Use an isolated AgentGuard rehearsal environment with synthetic data. The local
 evaluator already checks the schema and migrations from empty PostgreSQL; this
 procedure additionally checks the providers, browser sessions, and permissions.
-It has not yet been run on a fresh hosted environment.
+The [November 9 rehearsal](HOSTED-VERIFICATION-2026-11-09.md) records the completed
+hosted installation, human-approved refund, replay denial, and recovery checks.
 
 ## Prepare the rehearsal
 
